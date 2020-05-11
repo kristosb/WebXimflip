@@ -1,0 +1,23 @@
+{
+  "name": "WebXimflip",
+  "version": "1.0.0",
+  "description": "Web Bluetooth app for ximflip controller",
+  "main": "DaydreamController.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kristosb/WebXimflip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kristosb/WebXimflip/issues"
+  },
+  "homepage": "https://github.com/kristosb/WebXimflip#readme",
+  "dependencies": {
+    "serve": "^11.3.0"
+  }
+}
