@@ -9,8 +9,8 @@ function DaydreamController() {
 		return navigator.bluetooth.requestDevice( {
 			filters: [ {
 				name: 'Mira Prism Remote'
-			} ]//,
-			//optionalServices: [ 0x4000 ]
+			} ],
+			optionalServices: [ 0xF000 ]
 		} )
 		.then( function ( device ) {
 			return device.gatt.connect();
