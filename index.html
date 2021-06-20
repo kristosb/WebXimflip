@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>daydream-controller.js</title>
+		<title>ximflip miraprism controller</title>
 	</head>
 	<body>
 
-		<h1>daydream-controller.js</h1>
+		<h1>ximflip miraprism controller</h1>
 		<button id="button">CONNECT</button><span id="message"></span><br /><br />
 		<textarea id="textarea" rows="23" cols="50"></textarea>
 		<canvas id="canvas" width="400", height="300"></canvas><br /><br />
@@ -14,8 +14,7 @@
 		<!--<a href="https://vr.google.com/daydream/headset/">Daydream View</a>!-->
 
 		<script src="files/three.min.js"></script>
-		<script src="DaydreamController.js"></script>
-
+		<script src="ximflip.js"></script>
 		<script>
 
 			if ( 'bluetooth' in navigator === false ) {
@@ -32,7 +31,7 @@
 			var initialised = false;
 			var timeout = null;
 
-			button.addEventListener( 'click', function () {
+			/*button.addEventListener( 'click', function () {
 				var controller = new DaydreamController();
 				controller.onStateChange( function ( state ) {
 
@@ -105,8 +104,13 @@
 				} );
 				controller.connect();
 
-			} );
+			} );*/
+			var wand  =null;
+			button.addEventListener( 'click', function () {
+				wand = new ximflip();
+			});
 
+			
 			// 3D
 
 			var renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
@@ -138,7 +142,7 @@
 
 				var material = new THREE.MeshPhongMaterial( { color: 0x888899, shininess: 15, side: THREE.DoubleSide } );
 				mesh = new THREE.Mesh( geometry, material );
-				mesh.rotation.x = Math.PI / 2;
+				//mesh.rotation.y = -Math.PI / 2;
 				scene.add( mesh );
 
 				var geometry = new THREE.CircleBufferGeometry( 0.00166, 24 );
@@ -168,10 +172,31 @@
 				mesh.add( button3 );
 
 			} );
+			function controllerUpdate(){
+				if ( wand != null && mesh !== undefined ) {
+					if( wand.ready )
+					{
+						mesh.rotation.setFromRotationMatrix(wand.matrix4);
+						const rotationMatrix = new THREE.Matrix4();
+
+						textarea.textContent = JSON.stringify( wand.info, null, '\t' );
+						button1.material.emissive.g = wand.info.isClickDown ? 0.5 : 0;
+						button2.material.emissive.g = wand.info.isAppDown ? 0.5 : 0;
+						button3.material.emissive.g = wand.info.isHomeDown ? 0.5 : 0;
+
+						touch.position.x = ( wand.info.xTouch * 2 - 1 ) / 1000;
+						touch.position.y = - ( wand.info.yTouch * 2 - 1 ) / 1000;
+
+						touch.visible = wand.info.xTouch > 0 && wand.info.yTouch > 0;
+					}
+				}
+				
+			}
 
 			function animate() {
 
 				renderer.render( scene, camera );
+				controllerUpdate();
 				requestAnimationFrame( animate );
 
 			}
