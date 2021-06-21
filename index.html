@@ -10,8 +10,6 @@
 		<textarea id="textarea" rows="23" cols="50"></textarea>
 		<canvas id="canvas" width="400", height="300"></canvas><br /><br />
 		(Hold home key for 1 second to recenter)<br /><br />
-		<!--<a href="daydream-controller.js/">Source</a> !-->
-		<!--<a href="https://vr.google.com/daydream/headset/">Daydream View</a>!-->
 
 		<script src="files/three.min.js"></script>
 		<script src="ximflip.js"></script>
@@ -31,80 +29,6 @@
 			var initialised = false;
 			var timeout = null;
 
-			/*button.addEventListener( 'click', function () {
-				var controller = new DaydreamController();
-				controller.onStateChange( function ( state ) {
-
-					textarea.textContent = JSON.stringify( state, null, '\t' );
-
-					if ( mesh !== undefined ) {
-
-						var angle = Math.sqrt( state.xOri * state.xOri + state.yOri * state.yOri + state.zOri * state.zOri );
-
-						if ( angle > 0 ) {
-
-							axis.set( state.xOri, state.yOri, state.zOri )
-							axis.multiplyScalar( 1 / angle );
-
-							quaternion.setFromAxisAngle( axis, angle );
-
-							if ( initialised === false ) {
-
-								quaternionHome.copy( quaternion );
-								quaternionHome.inverse();
-
-								initialised = true;
-
-							}
-
-						} else {
-
-							quaternion.set( 0, 0, 0, 1 );
-
-						}
-
-						if ( state.isHomeDown ) {
-
-							if ( timeout === null ) {
-
-								timeout = setTimeout( function () {
-
-									quaternionHome.copy( quaternion );
-									quaternionHome.inverse();
-
-								}, 1000 );
-
-							}
-
-						} else {
-
-							if ( timeout !== null ) {
-
-								clearTimeout( timeout );
-								timeout = null;
-
-							}
-
-						}
-
-						mesh.quaternion.copy( quaternionHome );
-						mesh.quaternion.multiply( quaternion );
-
-						button1.material.emissive.g = state.isClickDown ? 0.5 : 0;
-						button2.material.emissive.g = state.isAppDown ? 0.5 : 0;
-						button3.material.emissive.g = state.isHomeDown ? 0.5 : 0;
-
-						touch.position.x = ( state.xTouch * 2 - 1 ) / 1000;
-						touch.position.y = - ( state.yTouch * 2 - 1 ) / 1000;
-
-						touch.visible = state.xTouch > 0 && state.yTouch > 0;
-
-					}
-
-				} );
-				controller.connect();
-
-			} );*/
 			var wand  =null;
 			button.addEventListener( 'click', function () {
 				wand = new ximflip();
@@ -176,8 +100,34 @@
 				if ( wand != null && mesh !== undefined ) {
 					if( wand.ready )
 					{
-						mesh.rotation.setFromRotationMatrix(wand.matrix4);
+						
 						const rotationMatrix = new THREE.Matrix4();
+						if ( wand.info.isHomeDown ) {
+							if ( timeout === null ) {
+								timeout = setTimeout( function () {
+										{
+											console.log("not initialized");
+											rotationMatrix.copy(wand.matrix4);
+											
+											var calPosition = new THREE.Vector3();
+											var calRotation = new THREE.Quaternion();
+											var calScale = new THREE.Vector3();
+											rotationMatrix.decompose(calPosition, calRotation, calScale);
+											quaternionHome.copy(calRotation);
+											quaternionHome.invert();
+										}
+								}, 1000 );
+							}
+							} else {
+							if ( timeout !== null ) {
+								clearTimeout( timeout );
+								timeout = null;
+							}
+						}
+
+						mesh.rotation.setFromRotationMatrix(wand.matrix4);
+						mesh.quaternion.multiply( quaternionHome );
+						//console.log(wand.eulerAngles);
 
 						textarea.textContent = JSON.stringify( wand.info, null, '\t' );
 						button1.material.emissive.g = wand.info.isClickDown ? 0.5 : 0;

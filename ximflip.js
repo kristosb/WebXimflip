@@ -1,77 +1,5 @@
-function degToRad(deg){
-    return deg*(Math.PI/180);
-}
-
-function radToDeg(rad){
-    return rad*(180/Math.PI);
-}
 var degtorad = Math.PI / 180;
-
-function anglesToMatrix(heading,attitude,bank){
-
-    //Cos and sin
-    var ch = Math.cos(heading),
-        sh = Math.sin(heading),
-        ca = Math.cos(attitude),
-        sa = Math.sin(attitude),
-        cb = Math.cos(bank),
-        sb = Math.sin(bank);
-
-    const rotationMatrix = new THREE.Matrix3();
-    rotationMatrix.set( 
-        ch*ca , -ch*sa*cb + sh*sb , ch*sa*sb + sh*cb 
-        ,sa   ,       ca*cb       ,      -ca*sb  
-        ,-sh*ca , sh*sa*cb + ch*sb  , -sh*sa*sb + ch*cb 
-        );
-    return rotationMatrix;
-}
-function anglesToMatrix4(heading,attitude,bank){
-
-    const m3 = anglesToMatrix(heading,attitude,bank);
-    const rotationMatrix = new THREE.Matrix4();
-
-    rotationMatrix.set( 
-        m3.elements[0], m3.elements[1], m3.elements[2], 0
-        , m3.elements[3], m3.elements[4], m3.elements[5], 0
-        , m3.elements[6], m3.elements[7], m3.elements[8], 0
-        ,0  ,0  ,0  ,1
-        );
-    return rotationMatrix;
-}
-
-
-function eulerAngles(heading,attitude,bank){
-
-    var matrix = anglesToMatrix(heading,attitude,bank);
-
-    //Singularity fix
-    //http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToEuler/index.htm
-    //North pole
-    if( matrix[1][0]>0.998 ){
-        heading = Math.atan2( -matrix[2][0], matrix[0][0] )+ Math.PI;//Math.atan2( matrix[0][2], matrix[2][2] );
-        attitude = Math.asin( matrix[1][0] );//Math.PI/2;
-        bank = 0;//Math.atan2( -matrix[1][2], matrix[1][1] );//0
-        //console.log("s1");
-    //South pole
-    } else if( matrix[1][0]<-0.998 ){
-        heading = Math.atan2( -matrix[2][0], matrix[0][0] )+ Math.PI;//Math.atan2( matrix[0][2], matrix[2][2] );
-        attitude = -Math.PI/2;
-        bank = 0;
-        //console.log("s2");
-    } else {
-        heading = Math.atan2( -matrix[2][0], matrix[0][0] )+ Math.PI;
-        attitude = Math.asin( matrix[1][0] );
-        bank = Math.atan2( -matrix[1][2], matrix[1][1] );
-    }
-
-    //Turn radians back to degrees and return
-    return {
-        "HEADING":  radToDeg( heading ),
-        "ATTITUDE": radToDeg( attitude ),
-        "BANK": radToDeg( bank ),
-        "MATRIX": matrix
-    };
-}
+var radToDeg = 180 / Math.PI;
 
 function dataJoin(data,h,m,l){
 	var res = (data.getUint8(h) & 0xFF)<<16 | (data.getUint8(m) & 0xFF)<<8 | (data.getUint8(l) & 0xFF) ;
@@ -208,15 +136,22 @@ class ximflip {
     get ready(){
         return this.updated;
     }
-    get rotationMatrix(){
-        return anglesToMatrix(this.state.xOri,this.state.zOri,this.state.yOri);
-    }
     get matrix4(){
         this.updated = false;
         const rotationMatrix = new THREE.Matrix4();
         var m4 = this.state.m4;
         m4.multiply(rotationMatrix.makeRotationY(270*degtorad));
         return m4;
+    }
+    get eulerAngles(){
+        /*const eulerAngles = new THREE.Euler( 0,0,0, 'YZX' );
+        eulerAngles.setFromRotationMatrix(this.matrix4,'YZX' );
+        const offset = new THREE.Vector3( 0, 180, 0 );
+        const flip = new THREE.Vector3( -1, 1, -1 );
+        //(bank,heading,altitude)
+        return eulerAngles.toVector3().multiplyScalar(radToDeg).add(offset).multiply(flip);*/
+        const angles = new THREE.Vector3( this.state.A, this.state.B, this.state.C );//(heading,altitude,bank)
+        return angles;
     }
 }
 
