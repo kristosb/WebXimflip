@@ -22,11 +22,6 @@
 
 			}
 
-			var axis = new THREE.Vector3();
-			var quaternion = new THREE.Quaternion();
-			var quaternionHome = new THREE.Quaternion();
-
-			var initialised = false;
 			var timeout = null;
 
 			var wand  =null;
@@ -98,23 +93,15 @@
 			} );
 			function controllerUpdate(){
 				if ( wand != null && mesh !== undefined ) {
-					if( wand.ready )
+					if( wand.updated )
 					{
 						
 						const rotationMatrix = new THREE.Matrix4();
-						if ( wand.info.isHomeDown ) {
+						if ( wand.info.isAppDown ) {
 							if ( timeout === null ) {
 								timeout = setTimeout( function () {
 										{
-											console.log("not initialized");
-											rotationMatrix.copy(wand.matrix4);
-											
-											var calPosition = new THREE.Vector3();
-											var calRotation = new THREE.Quaternion();
-											var calScale = new THREE.Vector3();
-											rotationMatrix.decompose(calPosition, calRotation, calScale);
-											quaternionHome.copy(calRotation);
-											quaternionHome.invert();
+											wand.calibrate();
 										}
 								}, 1000 );
 							}
@@ -124,10 +111,7 @@
 								timeout = null;
 							}
 						}
-
-						mesh.rotation.setFromRotationMatrix(wand.matrix4);
-						mesh.quaternion.multiply( quaternionHome );
-						//console.log(wand.eulerAngles);
+						mesh.quaternion.copy(wand.quaternion);
 
 						textarea.textContent = JSON.stringify( wand.info, null, '\t' );
 						button1.material.emissive.g = wand.info.isClickDown ? 0.5 : 0;

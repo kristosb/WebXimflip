@@ -9,8 +9,9 @@ return res;
 class ximflip {
     constructor(){
         //var state = {};
-        this.updated = false;
+        this._updated = false;
         this.state = {};
+        this.quaternionHome = new THREE.Quaternion();
         var that = this;
         function handleData( event ) {
 
@@ -21,7 +22,7 @@ class ximflip {
             that.state.isClickDown = (data.getUint8(15) & 0x04) > 0;
             that.state.isAppDown = (data.getUint8(15) & 0x10) > 0;
             that.state.isHomeDown = (data.getUint8(15) & 0x08) > 0;
-            //state.triggerDown = (data.getUint8(15) & 0x80) > 0;
+            that.state.triggerDown = (data.getUint8(14) & 0xFF) > 0;
             that.state.padClick= (data.getUint8(16) & 0x60) > 0;
             that.state.padHold= (data.getUint8(16) & 0x80) > 0;
         
@@ -35,6 +36,7 @@ class ximflip {
             that.state.A *= (1 / 10000);
             that.state.A -=180;
             that.state.A = -that.state.A;
+
             that.state.B = dataJoin(data, 5,6,7);
             //state.yoriDeg = (state.B<<8)*1.0;
             that.state.B =  that.state.B >>23 == 0 ? that.state.B : that.state.B|0xffE00000;
@@ -100,9 +102,10 @@ class ximflip {
             that.state.D19 = data.getUint8(19).toString(baseN);
             that.state.D19 = '0b'+"00000000".substr(that.state.D19.length) + that.state.D19;
             var eulerRot = new THREE.Matrix4();
-            const eulerVector = new THREE.Euler( that.state.xOri,that.state.yOri,that.state.zOri, 'YZX' );
-            that.state.m4 =  eulerRot.makeRotationFromEuler(eulerVector);
-            that.updated = true;
+            var eulerVector = new THREE.Euler( that.state.xOri,that.state.yOri,that.state.zOri, 'YZX' );
+            that.state.m4 = new THREE.Matrix4();
+            that.state.m4.copy(eulerRot.makeRotationFromEuler(eulerVector));
+            that._updated = true;
         }
         function connect() {
 
@@ -130,20 +133,26 @@ class ximflip {
         connect();
     }
     get info(){
-        this.updated = false;
+        this._updated = false;
         return this.state;
     }
-    get ready(){
-        return this.updated;
-    }
     get matrix4(){
-        this.updated = false;
+        //this._updated = false;
         const rotationMatrix = new THREE.Matrix4();
-        var m4 = this.state.m4;
+        var m4 = new THREE.Matrix4();
+        m4.copy(this.state.m4);
         m4.multiply(rotationMatrix.makeRotationY(270*degtorad));
         return m4;
     }
-    get eulerAngles(){
+    get quaternionRaw(){
+        const position = new THREE.Vector3();
+        const scale = new THREE.Vector3();
+        const quaternion = new THREE.Quaternion();
+
+        this.matrix4.decompose(position,quaternion,scale);
+        return quaternion;
+    }
+    get eulerAnglesRaw(){
         /*const eulerAngles = new THREE.Euler( 0,0,0, 'YZX' );
         eulerAngles.setFromRotationMatrix(this.matrix4,'YZX' );
         const offset = new THREE.Vector3( 0, 180, 0 );
@@ -152,6 +161,48 @@ class ximflip {
         return eulerAngles.toVector3().multiplyScalar(radToDeg).add(offset).multiply(flip);*/
         const angles = new THREE.Vector3( this.state.A, this.state.B, this.state.C );//(heading,altitude,bank)
         return angles;
+    }
+    get eulerAngles(){
+        const eulerAngles = new THREE.Euler( 0,0,0, 'YZX' );
+        eulerAngles.setFromRotationMatrix(this.matrix4,'YZX' );
+        const offset = new THREE.Vector3( 0, 180, 0 );
+        const flip = new THREE.Vector3( -1, 1, -1 );
+        //(bank,heading,altitude)
+        return eulerAngles.toVector3().multiplyScalar(radToDeg).add(offset).multiply(flip);
+    }
+    calibrate(){    
+        this.quaternionHome.identity();  
+        console.log(this.state.m4.elements); 
+        console.log(this.state.A,this.state.B,this.state.C); 
+        console.log(this.state.xOri,this.state.yOri,this.state.zOri); 
+        //console.log(this.quaternionHome,this.quaternionRaw);  
+        this.quaternionHome.copy(this.quaternionRaw);
+        this.quaternionHome.invert();
+        //console.log(this.quaternionHome,this.quaternionRaw);
+    }
+    get quaternion(){
+        //console.log(this.quaternionHome,this.quaternionRaw); 
+        const rotCalibrated = new THREE.Quaternion();
+        rotCalibrated.multiplyQuaternions(this.quaternionHome,this.quaternionRaw);
+        return rotCalibrated;
+    }
+    get yaw(){
+        return this.state.A;
+    }
+    get pitch(){
+        return this.state.B;
+    }
+    get roll(){
+        return this.state.C;
+    }
+    get compass(){
+        return this.state.A;
+    }
+    get updated(){
+        if (this._updated){
+            this._updated = false;
+            return true;
+        } else return false;   
     }
 }
 
