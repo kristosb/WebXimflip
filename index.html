@@ -4,13 +4,11 @@
 		<title>ximflip miraprism controller</title>
 	</head>
 	<body>
-
 		<h1>ximflip miraprism controller</h1>
 		<button id="button">CONNECT</button><span id="message"></span><br /><br />
 		<textarea id="textarea" rows="23" cols="50"></textarea>
 		<canvas id="canvas" width="400", height="300"></canvas><br /><br />
 		(Hold app key for 1 second to recenter)<br /><br />
-
 		<script src="files/three.min.js"></script>
 		<script src="ximflip.js"></script>
 		<script>
@@ -27,9 +25,7 @@
 			var wand  =null;
 			button.addEventListener( 'click', function () {
 				wand = new ximflip();
-			});
-
-			
+			});	
 			// 3D
 
 			var renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
@@ -61,7 +57,6 @@
 
 				var material = new THREE.MeshPhongMaterial( { color: 0x888899, shininess: 15, side: THREE.DoubleSide } );
 				mesh = new THREE.Mesh( geometry, material );
-				//mesh.rotation.y = -Math.PI / 2;
 				scene.add( mesh );
 
 				var geometry = new THREE.CircleBufferGeometry( 0.00166, 24 );
@@ -134,7 +129,6 @@
 				requestAnimationFrame( animate );
 
 			}
-
 			requestAnimationFrame( animate );
 
 		</script>
